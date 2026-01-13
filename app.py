@@ -82,13 +82,59 @@ def _allowed_file(filename: str) -> bool:
 
 
 def _csv_columns() -> list[str]:
-    # единый CSV для ПОКУПАЮ / ПРОДАЮ    return ["id", "created_utc", "kind", "title", "price_tenge", "phone", "description", "photos", "password"]def _ensure_csv_header():
-    if SUBMISSIONS_CSV.exists():
-        # если файл уже есть, не трогаем (чтобы не потерять данные)
+    # Единый CSV для карточек (NR KITAP)
+    return [
+        "id",
+        "created_utc",
+        "kind",
+        "title",
+        "price_tenge",
+        "phone",
+        "description",
+        "photos",
+        "password",
+    ]
+
+
+def _ensure_csv_header() -> None:
+    """Ensure CSV exists with the expected header.
+    If file exists but header is missing 'password', do a simple migration.
+    """
+    if not SUBMISSIONS_CSV.exists():
+        with SUBMISSIONS_CSV.open("w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(_csv_columns())
         return
-    with SUBMISSIONS_CSV.open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(_csv_columns())
+
+    # Migration: add missing columns to existing CSV (most importantly 'password')
+    with SUBMISSIONS_CSV.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.reader(f)
+        rows = list(reader)
+
+    if not rows:
+        with SUBMISSIONS_CSV.open("w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(_csv_columns())
+        return
+
+    header = rows[0]
+    expected = _csv_columns()
+
+    if header == expected:
+        return
+
+    if "password" not in header:
+        new_header = header + ["password"]
+        new_rows = [new_header]
+        for r in rows[1:]:
+            new_rows.append(r + [""])
+        with SUBMISSIONS_CSV.open("w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerows(new_rows)
+        return
+
+    # If header differs in other ways, keep it as-is (avoid data loss).
+    return
 
 
 def _save_submission_row(
