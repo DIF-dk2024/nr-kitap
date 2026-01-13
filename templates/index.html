@@ -131,9 +131,15 @@
         <div class="cards">
           {% for s in submissions %}
             <div class="card-item" role="button" tabindex="0" aria-expanded="false">
-              <a class="thumb-list" href="{{ s.thumb_url }}" target="_blank" rel="noreferrer">
-                <img src="{{ s.thumb_url }}" alt="thumb {{ s.id }}">
-              </a>
+              {% if s.password and not s.unlocked %}
+  <div class="thumb-list locked" aria-hidden="true">
+    <img src="{{ s.thumb_url }}" alt="locked {{ s.id }}">
+  </div>
+{% else %}
+  <a class="thumb-list" href="{{ s.thumb_url }}" target="_blank" rel="noreferrer">
+    <img src="{{ s.thumb_url }}" alt="thumb {{ s.id }}">
+  </a>
+{% endif %}
 
               <div class="meta2">
                 <div class="row1">
@@ -177,9 +183,9 @@
                       <div class="detail-block">
                         <div class="detail-label">Пароль</div>
                         <div class="detail-text">
-                          <form method="post" action="/unlock/{{ s.id }}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                            <input name="password" type="password" placeholder="Введите пароль" style="max-width:260px;" />
-                            <button type="submit" class="btn2 primary" style="padding:10px 12px;border-radius:14px;">Открыть файлы</button>
+                          <form method="post" action="/unlock/{{ s.id }}" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                            <input name="password" type="password" placeholder="Введите пароль" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="max-width:260px;" />
+                            <button type="submit" onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" class="btn2 primary" style="padding:10px 12px;border-radius:14px;">Открыть файлы</button>
                           </form>
                           <div class="small" style="margin-top:6px;">Файлы доступны после ввода пароля.</div>
                         </div>
@@ -220,10 +226,12 @@
     document.querySelectorAll('.card-item').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.target && (e.target.tagName === 'A' || e.target.closest('a'))) return;
+        if (e.target && e.target.closest('input, textarea, select, button, label, form')) return;
         toggleCard(card);
       });
 
       card.addEventListener('keydown', (e) => {
+        if (e.target && e.target.closest('input, textarea, select, button')) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           toggleCard(card);

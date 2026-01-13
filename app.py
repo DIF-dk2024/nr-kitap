@@ -268,6 +268,11 @@ def index():
         sid = s.get("id")
         s["unlocked"] = bool(sid and sid in unlocked)
 
+        # Если карточка защищена паролем и ещё не разблокирована —
+        # показываем безопасное превью (без доступа к реальному файлу)
+        if (s.get("password") or "").strip() and not s["unlocked"]:
+            s["thumb_url"] = "/static/locked_thumb.svg"
+
     return render_template("index.html", submissions=submissions)
 
 
